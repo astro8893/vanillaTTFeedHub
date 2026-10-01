@@ -20,12 +20,15 @@ from .tokens import USER_AGENT, ScopeError, TokenManager
 log = logging.getLogger("ttfeedhub")
 
 
-def _install_uvloop() -> None:
+def _new_loop() -> asyncio.AbstractEventLoop:
+    """A uvloop loop where uvloop is installed (Linux), else asyncio's. Made directly
+    rather than through an event loop policy: policies are deprecated in 3.14."""
     try:
         import uvloop  # type: ignore[import-not-found,unused-ignore]
     except ImportError:
-        return
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+        return asyncio.new_event_loop()
+    loop: asyncio.AbstractEventLoop = uvloop.new_event_loop()
+    return loop
 
 
 async def _make_app(
@@ -69,7 +72,6 @@ def main() -> int:
     except ConfigError as e:
         log.error("config error: %s", e)
         return 2
-    _install_uvloop()
     log.info(
         "TTfeedhub starting on %s:%d with %d clients", settings.host, settings.port, len(clients)
     )
@@ -81,6 +83,7 @@ def main() -> int:
             access_log=None,
             shutdown_timeout=3,
             print=None,
+            loop=_new_loop(),
         )
     except ScopeError as e:
         log.error("refusing to start: %s", e)
