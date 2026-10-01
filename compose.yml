@@ -1,0 +1,41 @@
+# TTfeedhub — the only DXLink client for the tastytrade account.
+# Consumers join the "ttfeed" network and use http://ttfeedhub:8700.
+# The operator creates "ttfeed" once: docker network create --internal ttfeed
+name: ttfeedhub
+
+services:
+  ttfeedhub:
+    build: .
+    image: ttfeedhub:local
+    container_name: ttfeedhub
+    restart: unless-stopped
+    stop_grace_period: 20s   # on_shutdown closes clients (1001); run_app waits at most 3s
+    # No published port: the hub is reachable only on the internal "ttfeed"
+    # network. Operators use `docker compose exec` (see README).
+    networks: [default, ttfeed]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    pids_limit: 128
+    environment:
+      TTFH_LOG_LEVEL: INFO
+    secrets: [tt_client_secret, tt_refresh_token]
+    volumes:
+      - ./clients.toml:/etc/ttfeedhub/clients.toml:ro
+
+networks:
+  # Created once by the operator with `docker network create --internal ttfeed`
+  # (internal: clients only, no egress; the hub reaches tastytrade via
+  # "default"). External, so `docker compose down` never removes it and hub
+  # and consumers can start in any order.
+  ttfeed:
+    external: true
+    name: ttfeed
+
+secrets:
+  tt_client_secret:
+    file: ./secrets/tt_client_secret
+  tt_refresh_token:
+    file: ./secrets/tt_refresh_token

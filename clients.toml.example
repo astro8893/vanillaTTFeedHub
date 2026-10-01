@@ -1,0 +1,8 @@
+# Create real entries with:  python scripts/new_client.py <name> --file clients.toml
+# Only the SHA-256 of each token is stored; the token is printed once.
+[clients.example]
+token_sha256 = "0000000000000000000000000000000000000000000000000000000000000000"
+max_keys = 2000
+max_connections = 2
+event_types = ["Quote", "Trade", "Greeks", "Summary", "TimeAndSale", "Candle"]
+candles_per_min = 60

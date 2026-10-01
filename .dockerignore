@@ -1,0 +1,10 @@
+.git
+.venv
+tests
+docs
+client
+scripts
+secrets
+clients.toml
+**/__pycache__
+*.egg-info

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ttfeedhub-client"
+# Keep in step with VERSION in ttfeedhub_client/client.py.
+version = "0.1.0"
+description = "Python client for vanillaTTFeedHub, a self-hosted tastytrade DXLink market-data hub"
+readme = { text = "Client for vanillaTTFeedHub. See the repository README.", content-type = "text/plain" }
+license = { text = "MIT" }
+requires-python = ">=3.12"
+dependencies = [
+  "aiohttp>=3.11",
+  "orjson",
+]
+
+[project.urls]
+Homepage = "https://github.com/astro8893/vanillaTTFeedHub"
+
+[tool.setuptools]
+packages = ["ttfeedhub_client"]
+
+[tool.setuptools.package-data]
+ttfeedhub_client = ["py.typed"]
