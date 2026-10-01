@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import gc
 import logging
 import sys
 from collections.abc import AsyncIterator
@@ -47,6 +48,10 @@ async def _make_app(
     # First, so it is unwound last (after hub.stop) and also when hub.start()
     # fails (e.g. ScopeError), where aiohttp skips on_cleanup.
     app.cleanup_ctx.insert(0, _http)
+    # Move everything allocated so far (modules, config, the app) out of the
+    # collector's view, so full collections don't rescan it.
+    gc.collect()
+    gc.freeze()
     return app
 
 

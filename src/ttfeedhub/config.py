@@ -49,6 +49,10 @@ class Settings:
     reaper_interval_s: float = 5.0
     heartbeat_s: float = 2.0
     auth_retry_s: float = 300.0
+    # Cyclic-GC generation-0 threshold while the hub runs (0 keeps Python's 700).
+    # Event dicts are acyclic and freed by refcount, so frequent gen-0 passes over
+    # them find nothing; they only cost CPU on the hot path and add tail latency.
+    gc_threshold0: int = 50_000
 
     @property
     def session_budget(self) -> int:
@@ -64,6 +68,7 @@ _ENV: dict[str, tuple[str, Callable[[str], Any]]] = {
     "TTFH_LOG_LEVEL": ("log_level", str),
     "TTFH_STREAM_SYMBOLS_PER_SOCKET": ("stream_symbols_per_socket", int),
     "TTFH_LINGER_S": ("linger_s", float),
+    "TTFH_GC_THRESHOLD0": ("gc_threshold0", int),
 }
 
 
@@ -83,6 +88,8 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         raise ConfigError("TTFH_STREAM_SYMBOLS_PER_SOCKET must be 1..100000")
     if not 1 <= s.port <= 65535:
         raise ConfigError("TTFH_PORT must be 1..65535")
+    if s.gc_threshold0 < 0:
+        raise ConfigError("TTFH_GC_THRESHOLD0 must be >= 0")
     return s
 
 

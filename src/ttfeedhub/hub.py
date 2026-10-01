@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import gc
 import itertools
 import logging
 import time
@@ -78,6 +79,7 @@ class Hub:
         self._tasks: list[asyncio.Task[None]] = []
         self._since_state = self.state
         self._since = time.time()  # epoch seconds when the current state began
+        self._gc_prev: tuple[int, int, int] | None = None
 
     @property
     def state(self) -> str:
@@ -87,6 +89,9 @@ class Hub:
         return st
 
     async def start(self) -> None:
+        if self.settings.gc_threshold0 and self._gc_prev is None:
+            self._gc_prev = gc.get_threshold()
+            gc.set_threshold(self.settings.gc_threshold0, *self._gc_prev[1:])
         self._tasks = [
             asyncio.create_task(self._reaper(), name="hub-reaper"),
             asyncio.create_task(self._heartbeat(), name="hub-heartbeat"),
@@ -111,6 +116,9 @@ class Hub:
         await asyncio.gather(*tasks, return_exceptions=True)
         await self.pool.close()
         await self.history.close()
+        if self._gc_prev is not None:
+            gc.set_threshold(*self._gc_prev)
+            self._gc_prev = None
 
     def _note_state(self) -> str:
         st = self.state

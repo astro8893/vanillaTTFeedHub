@@ -1,4 +1,5 @@
 import asyncio
+import gc
 import time
 
 import aiohttp
@@ -30,3 +31,14 @@ async def test_shutdown_closes_clients_with_1001_quickly(
     await asyncio.wait_for(reader, 2)
     assert ws.close_code == 1001
     assert elapsed < 5, f"shutdown took {elapsed:.1f}s"
+
+
+async def test_hub_raises_gc_threshold_while_running_and_restores_it(hub: Hub) -> None:
+    before = gc.get_threshold()
+    server = TestServer(build_app(hub))
+    await server.start_server()
+    try:
+        assert gc.get_threshold() == (hub.settings.gc_threshold0, *before[1:])
+    finally:
+        await server.close()
+    assert gc.get_threshold() == before

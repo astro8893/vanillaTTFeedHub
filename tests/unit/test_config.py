@@ -29,6 +29,13 @@ def test_env_overrides() -> None:
     assert (s.port, s.stream_symbols_per_socket, s.linger_s) == (9000, 1200, 2.5)
 
 
+def test_gc_threshold0() -> None:
+    assert load_settings({}).gc_threshold0 == 50_000
+    assert load_settings({"TTFH_GC_THRESHOLD0": "0"}).gc_threshold0 == 0  # Python's default
+    with pytest.raises(ConfigError):
+        load_settings({"TTFH_GC_THRESHOLD0": "-1"})
+
+
 def test_rejects_bad_values() -> None:
     with pytest.raises(ConfigError):
         load_settings({"TTFH_PORT": "abc"})

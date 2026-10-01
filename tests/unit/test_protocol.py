@@ -66,6 +66,17 @@ def test_decode_compact_rows_and_multiple_types() -> None:
     ]
 
 
+def test_decode_nonfinite_strings_become_none_but_symbol_is_kept() -> None:
+    fields = {"Quote": ("eventSymbol", "bidPrice", "askPrice", "bidSize")}
+    data = ["Quote", ["NaN", "Infinity", "-Infinity", 1.0, "SPX", "x", [1], 2.0]]
+    out = p.decode_feed_data(data, fields)
+    assert out == [
+        {"type": "Quote", "symbol": "NaN", "bidPrice": None, "askPrice": None, "bidSize": 1.0},
+        {"type": "Quote", "symbol": "SPX", "bidPrice": "x", "askPrice": [1], "bidSize": 2.0},
+    ]
+    assert list(out[0]) == ["type", "symbol", "bidPrice", "askPrice", "bidSize"]
+
+
 @pytest.mark.parametrize(
     "data",
     [["Quote"], ["Quote", ["SPX", 1.0]], ["Nope", []], ["Quote", "notalist"]],
